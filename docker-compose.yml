@@ -1,0 +1,47 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-po_tracker}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-po_tracker}
+      - POSTGRES_DB=${POSTGRES_DB:-po_tracker}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Creates the separate test database on first start
+      - ./backend/docker/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-po_tracker} -d ${POSTGRES_DB:-po_tracker}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - SECRET_KEY=${SECRET_KEY:-change-me}
+      - DATABASE_URL=postgresql+psycopg://${POSTGRES_USER:-po_tracker}:${POSTGRES_PASSWORD:-po_tracker}@db:5432/${POSTGRES_DB:-po_tracker}
+      - TEST_DATABASE_URL=postgresql+psycopg://${POSTGRES_USER:-po_tracker}:${POSTGRES_PASSWORD:-po_tracker}@db:5432/po_tracker_test
+      - SEED_PASSWORD=${SEED_PASSWORD:-Password123!}
+      - MAX_UPLOAD_MB=${MAX_UPLOAD_MB:-10}
+      - UPLOAD_DIR=/app/uploads
+    volumes:
+      # DOs, invoices and photos survive restarts
+      - uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  uploads:

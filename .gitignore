@@ -1,0 +1,17 @@
+node_modules
+dist
+__pycache__
+*.pyc
+.venv
+.env
+.DS_Store
+.pytest_cache
+.coverage
+*.db
+
+# Internal project docs - kept local, not pushed to GitHub
+PO_TRACKER_SPEC.md
+CLAUDE.md
+
+# Uploaded files (DOs, invoices, photos) - never commit
+backend/uploads/
