@@ -5,6 +5,8 @@ import Layout from "./components/Layout";
 import { EmptyState, Loading } from "./components/ui";
 import { useAuth } from "./context/AuthContext";
 import AdminPage from "./pages/AdminPage";
+import IncomingPage from "./pages/IncomingPage";
+import ReceivePage from "./pages/ReceivePage";
 import LoginPage from "./pages/LoginPage";
 import PoDetailPage from "./pages/PoDetailPage";
 import PoFormPage from "./pages/PoFormPage";
@@ -28,6 +30,12 @@ function RequireRole({ roles, children }: { roles: Role[]; children: ReactNode }
   return <>{children}</>;
 }
 
+/** Each role's start page. */
+function Home() {
+  const { user } = useAuth();
+  return <Navigate to={user?.role === "receiving" ? "/incoming" : "/pos"} replace />;
+}
+
 export default function App() {
   return (
     <Routes>
@@ -39,7 +47,23 @@ export default function App() {
           </RequireAuth>
         }
       >
-        <Route index element={<Navigate to="/pos" replace />} />
+        <Route index element={<Home />} />
+        <Route
+          path="/incoming"
+          element={
+            <RequireRole roles={["receiving"]}>
+              <IncomingPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/shipments/:id/receive"
+          element={
+            <RequireRole roles={["receiving"]}>
+              <ReceivePage />
+            </RequireRole>
+          }
+        />
         <Route path="/pos" element={<PoListPage />} />
         <Route
           path="/pos/new"

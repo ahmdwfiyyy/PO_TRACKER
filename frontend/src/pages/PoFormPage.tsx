@@ -14,6 +14,7 @@ import {
   Select,
   Spinner,
   TrashIcon,
+  button,
   inputCls,
   redBtn,
   secondaryBtn,
@@ -223,7 +224,7 @@ export default function PoFormPage() {
         </Field>
 
         <div className="flex justify-end gap-3 border-t border-blue-50 pt-5">
-          <Link to={editing ? `/pos/${id}` : "/pos"} className={`${secondaryBtn} h-12`}>
+          <Link to={editing ? `/pos/${id}` : "/pos"} className={button("secondary", "lg")}>
             Cancel
           </Link>
           <button type="submit" disabled={busy || closed} className={redBtn}>

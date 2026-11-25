@@ -66,9 +66,11 @@ def derive_po_status(
 
 SHIPMENT_TRANSITIONS: dict[ShipmentStatus, set[ShipmentStatus]] = {
     ShipmentStatus.ON_THE_WAY: {ShipmentStatus.DELIVERED, ShipmentStatus.DISCREPANCY},
+    # A problem found after unpacking (e.g. damage) can still be reported on a delivered shipment
+    ShipmentStatus.DELIVERED: {ShipmentStatus.DISCREPANCY},
     ShipmentStatus.DISCREPANCY: {ShipmentStatus.RESOLVED},
-    ShipmentStatus.DELIVERED: set(),
-    ShipmentStatus.RESOLVED: set(),
+    # A new problem reported after resolution re-opens it
+    ShipmentStatus.RESOLVED: {ShipmentStatus.DISCREPANCY},
 }
 
 

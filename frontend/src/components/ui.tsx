@@ -15,16 +15,37 @@ export type IconProps = { className?: string };
 // ---------------------------------------------------------------------------
 export const panel =
   "relative overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-[0_12px_35px_rgba(7,27,85,0.08)]";
-export const inputCls =
-  "h-12 w-full rounded-xl border border-blue-100 bg-brand-ice/40 px-4 text-[15px] outline-none transition hover:border-blue-200 focus:border-brand-blue focus:bg-white focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500";
-export const textareaCls = inputCls.replace("h-12", "min-h-24 py-3");
+// Buttons and inputs are built from a tone + a size, so a page never has to override
+// a colour or height by appending classes (Tailwind does not guarantee which of two
+// conflicting classes wins, which once made a red button render white-on-white).
+const INPUT_SIZES = {
+  md: "h-12 px-4 text-[15px]",
+  lg: "h-14 px-4 text-lg font-bold tabular-nums", // touch-friendly, for the receiving dock
+} as const;
+export const input = (size: keyof typeof INPUT_SIZES = "md") =>
+  `w-full rounded-xl border border-blue-100 bg-brand-ice/40 outline-none transition hover:border-blue-200 focus:border-brand-blue focus:bg-white focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 ${INPUT_SIZES[size]}`;
+export const inputCls = input("md");
+export const textareaCls =
+  "min-h-24 w-full rounded-xl border border-blue-100 bg-brand-ice/40 px-4 py-3 text-[15px] outline-none transition hover:border-blue-200 focus:border-brand-blue focus:bg-white focus:ring-4 focus:ring-blue-100";
 export const selectCls = `${inputCls} appearance-none pr-10`;
-export const redBtn =
-  "inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-brand-red px-6 text-sm font-bold text-white shadow-[0_7px_18px_rgba(237,41,36,0.24)] transition hover:-translate-y-0.5 hover:bg-brand-red-dark hover:shadow-[0_10px_22px_rgba(237,41,36,0.3)] disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none";
-export const secondaryBtn =
-  "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-blue-100 bg-white px-4 text-sm font-bold text-brand-blue transition hover:border-brand-blue hover:bg-brand-ice disabled:cursor-not-allowed disabled:opacity-50";
-export const smallBtn =
-  "inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-blue-100 bg-white px-3 text-xs font-bold text-brand-blue transition hover:border-brand-blue hover:bg-brand-ice disabled:cursor-not-allowed disabled:opacity-50";
+
+const BUTTON_TONES = {
+  red: "bg-brand-red text-white shadow-[0_7px_18px_rgba(237,41,36,0.24)] hover:-translate-y-0.5 hover:bg-brand-red-dark hover:shadow-[0_10px_22px_rgba(237,41,36,0.3)] disabled:translate-y-0 disabled:opacity-60 disabled:shadow-none",
+  secondary: "border border-blue-100 bg-white text-brand-blue hover:border-brand-blue hover:bg-brand-ice disabled:opacity-50",
+  danger: "border border-red-200 bg-white text-brand-red hover:border-brand-red hover:bg-red-50 disabled:opacity-50",
+} as const;
+const BUTTON_SIZES = {
+  sm: "h-9 gap-1.5 rounded-lg px-3 text-xs",
+  md: "h-11 gap-2 rounded-xl px-4 text-sm",
+  lg: "h-12 gap-2 rounded-xl px-6 text-sm",
+  xl: "h-14 gap-2 rounded-xl px-8 text-base", // touch-friendly
+} as const;
+export const button = (tone: keyof typeof BUTTON_TONES, size: keyof typeof BUTTON_SIZES) =>
+  `inline-flex items-center justify-center font-bold transition disabled:cursor-not-allowed ${BUTTON_TONES[tone]} ${BUTTON_SIZES[size]}`;
+
+export const redBtn = button("red", "lg");
+export const secondaryBtn = button("secondary", "md");
+export const smallBtn = button("secondary", "sm");
 export const tableHead = "bg-brand-ice text-[11px] uppercase tracking-wide text-slate-500";
 export const th = "px-4 py-3 font-semibold";
 export const td = "px-4 py-3";
@@ -63,7 +84,11 @@ export const EditIcon = (p: IconProps) => <Icon {...p} d="M4 20h4L19 9l-4-4L4 16
 export const AlertIcon = (p: IconProps) => (
   <Icon {...p} d="M12 9v4m0 4h.01M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
 );
-export const ClockIcon = (p: IconProps) => <Icon {...p} d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-13v4l3 2" />;
+export const PaperclipIcon = (p: IconProps) => (
+  <Icon {...p} d="m20 11.5-8.5 8.5a5 5 0 0 1-7-7L13 4.5a3.5 3.5 0 0 1 5 5L9.5 18a2 2 0 0 1-3-3L14 7.5" />
+);
+export const InboxIcon = (p: IconProps) => <Icon {...p} d="M4 13h4l2 3h4l2-3h4M4 13l2-8h12l2 8v6H4v-6Z" />;
+export const ClockIcon =(p: IconProps) => <Icon {...p} d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-13v4l3 2" />;
 
 // ---------------------------------------------------------------------------
 // Small pieces
