@@ -1,20 +1,23 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { fmtDate, fmtDateTime, qty } from "../api/format";
-import type { Shipment } from "../api/types";
+import type { Discrepancy, Shipment } from "../api/types";
 import { FileList } from "./Attachments";
 import { DiscrepancyBadge, Flags, ShipmentStatusBadge } from "./StatusBadge";
-import { Badge, TruckIcon } from "./ui";
+import { Badge, CheckIcon, TruckIcon, button } from "./ui";
 
 /** One shipment: what was sent, what arrived, documents, photos and discrepancies. */
 export default function ShipmentCard({
   shipment: s,
   showPo = false,
   actions,
+  onResolve,
 }: {
   shipment: Shipment;
   showPo?: boolean;
   actions?: ReactNode;
+  /** Shown as a "Resolve" button on open discrepancies (Purchasing only). */
+  onResolve?: (d: Discrepancy) => void;
 }) {
   const received = new Map(s.receipt?.items.map((r) => [r.po_item_id, r]) ?? []);
 
@@ -135,6 +138,12 @@ export default function ShipmentCard({
                 <strong>Resolution:</strong> {d.resolution_note}
                 {d.resolved_by_name && ` (${d.resolved_by_name})`}
               </p>
+            )}
+            {onResolve && d.status === "OPEN" && (
+              <button type="button" className={`${button("red", "sm")} mt-2`} onClick={() => onResolve(d)}>
+                <CheckIcon className="h-3.5 w-3.5" />
+                Resolve
+              </button>
             )}
           </div>
         ))}

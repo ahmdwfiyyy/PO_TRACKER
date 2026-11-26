@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     max_upload_mb: int = 10
     # Used to build links in (mock) emails
     app_url: str = "http://localhost"
+    # Background overdue check interval; 0 turns the loop off (the dashboard still checks on load)
+    overdue_check_minutes: int = 60
     min_password_length: int = 8
     # Business timezone: decides what "today" is for overdue checks
     app_timezone: str = "Asia/Kuala_Lumpur"

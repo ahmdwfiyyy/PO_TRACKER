@@ -173,6 +173,55 @@ export type PODetail = {
   history: HistoryEntry[];
 };
 
+export type AppNotification = {
+  id: number;
+  type: string;
+  message: string;
+  link: string | null;
+  is_read: boolean;
+  created_at: string;
+};
+
+export type NotificationList = { items: AppNotification[]; unread: number };
+
+export type DiscrepancyListItem = Discrepancy & {
+  shipment_no: string;
+  shipment_status: ShipmentStatus;
+  po_id: number;
+  po_number: string;
+  vendor: VendorRef;
+};
+
+export type DashboardSummary = {
+  status_counts: Record<POStatus, number>;
+  open_pos: number;
+  overdue_pos: number;
+  in_transit: number;
+  open_discrepancies: number;
+  overdue: { id: number; po_number: string; vendor_name: string; status: POStatus; required_date: string; days_late: number }[];
+  overdue_shipments: {
+    id: number;
+    shipment_no: string;
+    po_id: number;
+    po_number: string;
+    vendor_name: string;
+    expected_delivery_date: string;
+    days_late: number;
+  }[];
+  discrepancies: DiscrepancyListItem[];
+  activity: {
+    id: number;
+    changed_at: string;
+    po_id: number;
+    po_number: string;
+    subject: string;
+    old_status: string | null;
+    new_status: string;
+    changed_by_name: string | null;
+    note: string | null;
+  }[];
+};
+
 export type POItemInput = {
   item_name: string;
   item_code: string | null;

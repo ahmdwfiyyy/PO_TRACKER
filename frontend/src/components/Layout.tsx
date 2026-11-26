@@ -5,12 +5,15 @@ import { ROLE_LABELS } from "../api/format";
 import type { Role } from "../api/types";
 import { useUser, useAuth } from "../context/AuthContext";
 import ChangePasswordModal from "./ChangePasswordModal";
-import { Brand, BuildingIcon, ClipboardIcon, KeyIcon, TruckIcon } from "./ui";
+import NotificationBell from "./NotificationBell";
+import { AlertIcon, Brand, BuildingIcon, ChartIcon, ClipboardIcon, KeyIcon, TruckIcon } from "./ui";
 
 // Menu per role. Later phases add Dashboard, Incoming shipments and Discrepancies here.
 const NAV: Record<Role, [string, string, ReactNode][]> = {
   purchasing: [
+    ["/dashboard", "Dashboard", <ChartIcon key="d" />],
     ["/pos", "Purchase orders", <ClipboardIcon key="p" />],
+    ["/discrepancies", "Discrepancies", <AlertIcon key="x" />],
     ["/admin", "Vendors & users", <BuildingIcon key="v" />],
   ],
   vendor: [["/pos", "My purchase orders", <ClipboardIcon key="p" />]],
@@ -24,8 +27,12 @@ function Header({ onChangePassword }: { onChangePassword: () => void }) {
   const user = useUser();
   const { signOut } = useAuth();
   return (
-    <header className="brand-grid relative overflow-hidden bg-brand-navy text-white shadow-[0_8px_30px_rgba(7,27,85,0.18)]">
-      <div className="brand-ribbon pointer-events-none absolute -right-16 -top-32 h-80 w-96 opacity-80" />
+    // No overflow-hidden on the header itself: it would clip the notification dropdown.
+    // Only the decoration layer is clipped, and z-30 keeps the header (and dropdown) above the page.
+    <header className="brand-grid relative z-30 bg-brand-navy text-white shadow-[0_8px_30px_rgba(7,27,85,0.18)]">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+        <div className="brand-ribbon absolute -right-16 -top-32 h-80 w-96 opacity-80" />
+      </div>
       <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-brand-red via-white to-brand-bright" />
 
       <div className="relative mx-auto flex h-[84px] max-w-[1180px] items-center justify-between gap-3 px-5 sm:px-8">
@@ -37,6 +44,7 @@ function Header({ onChangePassword }: { onChangePassword: () => void }) {
               {user.role === "vendor" && user.vendor_name ? user.vendor_name : ROLE_LABELS[user.role]}
             </p>
           </div>
+          <NotificationBell />
           <button
             type="button"
             onClick={onChangePassword}

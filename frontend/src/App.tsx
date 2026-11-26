@@ -5,6 +5,8 @@ import Layout from "./components/Layout";
 import { EmptyState, Loading } from "./components/ui";
 import { useAuth } from "./context/AuthContext";
 import AdminPage from "./pages/AdminPage";
+import DashboardPage from "./pages/DashboardPage";
+import DiscrepanciesPage from "./pages/DiscrepanciesPage";
 import IncomingPage from "./pages/IncomingPage";
 import ReceivePage from "./pages/ReceivePage";
 import LoginPage from "./pages/LoginPage";
@@ -33,7 +35,8 @@ function RequireRole({ roles, children }: { roles: Role[]; children: ReactNode }
 /** Each role's start page. */
 function Home() {
   const { user } = useAuth();
-  return <Navigate to={user?.role === "receiving" ? "/incoming" : "/pos"} replace />;
+  const home = user?.role === "receiving" ? "/incoming" : user?.role === "purchasing" ? "/dashboard" : "/pos";
+  return <Navigate to={home} replace />;
 }
 
 export default function App() {
@@ -48,6 +51,22 @@ export default function App() {
         }
       >
         <Route index element={<Home />} />
+        <Route
+          path="/dashboard"
+          element={
+            <RequireRole roles={["purchasing"]}>
+              <DashboardPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/discrepancies"
+          element={
+            <RequireRole roles={["purchasing"]}>
+              <DiscrepanciesPage />
+            </RequireRole>
+          }
+        />
         <Route
           path="/incoming"
           element={

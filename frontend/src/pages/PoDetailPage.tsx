@@ -4,9 +4,9 @@ import { Link, useLocation, useParams } from "react-router-dom";
 import { api, errorText, sendJson } from "../api/client";
 import { fmtDate, fmtDateTime, qty } from "../api/format";
 import type { PODetail, POItem } from "../api/types";
-import type { Shipment } from "../api/types";
+import type { Discrepancy, Shipment } from "../api/types";
 import { UploadButton } from "../components/Attachments";
-import { AcknowledgeModal, DispatchModal, ReportProblemModal } from "../components/PoActions";
+import { AcknowledgeModal, DispatchModal, ReportProblemModal, ResolveModal } from "../components/PoActions";
 import ShipmentCard from "../components/ShipmentCard";
 import { Flags, POStatusBadge, statusLabel } from "../components/StatusBadge";
 import {
@@ -106,7 +106,9 @@ export default function PoDetailPage() {
     const text = (location.state as { notice?: string } | null)?.notice;
     return text ? { type: "success", text } : null;
   });
-  const [dialog, setDialog] = useState<"cancel" | "acknowledge" | "dispatch" | { report: Shipment } | null>(null);
+  const [dialog, setDialog] = useState<
+    "cancel" | "acknowledge" | "dispatch" | { report: Shipment } | { resolve: Discrepancy } | null
+  >(null);
 
   const load = useCallback(() => {
     api<PODetail>(`/api/pos/${id}`)
@@ -296,7 +298,12 @@ export default function PoDetailPage() {
           ) : (
             <div className="space-y-4">
               {po.shipments.map((s) => (
-                <ShipmentCard key={s.id} shipment={s} actions={shipmentActions(s)} />
+                <ShipmentCard
+                  key={s.id}
+                  shipment={s}
+                  actions={shipmentActions(s)}
+                  onResolve={isPurchasing ? (d) => setDialog({ resolve: d }) : undefined}
+                />
               ))}
             </div>
           )}
@@ -333,7 +340,14 @@ export default function PoDetailPage() {
           onDone={(_, errors) => done("Shipment dispatched. Carsem has been notified.", errors)}
         />
       )}
-      {dialog && typeof dialog === "object" && (
+      {dialog && typeof dialog === "object" && "resolve" in dialog && (
+        <ResolveModal
+          discrepancy={dialog.resolve}
+          onClose={() => setDialog(null)}
+          onDone={() => done("Discrepancy resolved. The vendor has been notified.")}
+        />
+      )}
+      {dialog && typeof dialog === "object" && "report" in dialog && (
         <ReportProblemModal
           shipment={dialog.report}
           onClose={() => setDialog(null)}

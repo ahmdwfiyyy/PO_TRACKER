@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { errorText, sendJson, uploadFiles } from "../api/client";
 import { qty, today } from "../api/format";
-import type { DiscrepancyType, PODetail, Shipment } from "../api/types";
+import type { Discrepancy, DiscrepancyType, PODetail, Shipment } from "../api/types";
 import { FilePicker } from "./Attachments";
 import { DISCREPANCY_TYPES } from "./StatusBadge";
 import { Banner, Field, Modal, Select, Spinner, button, inputCls, redBtn, textareaCls } from "./ui";
@@ -209,6 +209,50 @@ export function DispatchModal({ po, onClose, onDone }: { po: PODetail; onClose: 
         </Field>
 
         <Buttons busy={busy} label={partial ? "Dispatch partial delivery" : "Dispatch"} onClose={onClose} />
+      </form>
+    </Modal>
+  );
+}
+
+// ---------------------------------------------------------------------------
+/** Purchasing records how a discrepancy was settled. */
+export function ResolveModal({ discrepancy, onClose, onDone }: { discrepancy: Discrepancy; onClose: () => void; onDone: () => void }) {
+  const [note, setNote] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      await sendJson(`/api/discrepancies/${discrepancy.id}/resolve`, { resolution_note: note });
+      onDone();
+    } catch (err) {
+      setError(errorText(err));
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Modal title="Resolve discrepancy" onClose={onClose}>
+      <form onSubmit={submit} className="space-y-4">
+        <Banner notice={error ? { type: "error", text: error } : null} />
+        <div className="rounded-xl bg-red-50/70 px-4 py-3 text-sm text-slate-700">
+          <p className="font-bold text-brand-red">
+            {DISCREPANCY_TYPES[discrepancy.type].split(" (")[0]}
+            {discrepancy.item_name && ` · ${discrepancy.item_name}`}
+          </p>
+          {discrepancy.description && <p className="mt-1 whitespace-pre-line">{discrepancy.description}</p>}
+        </div>
+        <Field label="Resolution" hint="Shown to the vendor, e.g. “Vendor will send 2 replacements” or “Credit note issued”">
+          <textarea required maxLength={2000} value={note} onChange={(e) => setNote(e.target.value)} className={textareaCls} />
+        </Field>
+        <p className="text-xs text-slate-500">
+          Quantities are not changed: anything short or damaged stays outstanding, so the vendor can ship a replacement as a new
+          shipment.
+        </p>
+        <Buttons busy={busy} label="Mark resolved" onClose={onClose} />
       </form>
     </Modal>
   );

@@ -76,6 +76,8 @@ class PurchaseOrder(Base):
     external_ref: Mapped[str | None] = mapped_column(String(100), unique=True)  # ERP id, for future import
     acknowledged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     acknowledged_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    # Set when the overdue alert was sent, so it is sent once; cleared if the PO stops being overdue
+    overdue_notified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = _ts()
     updated_at: Mapped[datetime] = _ts(onupdate=utcnow)
@@ -119,6 +121,7 @@ class Shipment(Base):
     dispatched_at: Mapped[datetime] = _ts()
     status: Mapped[str] = mapped_column(String(20), default=ShipmentStatus.ON_THE_WAY, index=True)
     created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    overdue_notified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     po: Mapped[PurchaseOrder] = relationship(back_populates="shipments")
     items: Mapped[list["ShipmentItem"]] = relationship(back_populates="shipment", cascade="all, delete-orphan")

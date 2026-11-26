@@ -87,7 +87,8 @@ export const AlertIcon = (p: IconProps) => (
 export const PaperclipIcon = (p: IconProps) => (
   <Icon {...p} d="m20 11.5-8.5 8.5a5 5 0 0 1-7-7L13 4.5a3.5 3.5 0 0 1 5 5L9.5 18a2 2 0 0 1-3-3L14 7.5" />
 );
-export const InboxIcon = (p: IconProps) => <Icon {...p} d="M4 13h4l2 3h4l2-3h4M4 13l2-8h12l2 8v6H4v-6Z" />;
+export const BellIcon = (p: IconProps) => <Icon {...p} d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15L6 16Zm4 4h4" />;
+export const InboxIcon =(p: IconProps) => <Icon {...p} d="M4 13h4l2 3h4l2-3h4M4 13l2-8h12l2 8v6H4v-6Z" />;
 export const ClockIcon =(p: IconProps) => <Icon {...p} d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-13v4l3 2" />;
 
 // ---------------------------------------------------------------------------
