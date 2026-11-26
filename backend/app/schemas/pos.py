@@ -4,7 +4,8 @@ from typing import Annotated
 from pydantic import BaseModel, Field, StringConstraints
 
 from app.models import POStatus
-from app.schemas.common import ORM, OptText, QtyIn, QtyOut
+from app.schemas.common import OptText, QtyIn, QtyOut, VendorRef
+from app.schemas.shipments import ShipmentDetail
 
 
 # --------------------------------------------------------------------------- input
@@ -40,11 +41,6 @@ class POCancel(BaseModel):
 
 
 # --------------------------------------------------------------------------- output
-class VendorRef(ORM):
-    id: int
-    name: str
-
-
 class POListItem(BaseModel):
     id: int
     po_number: str
@@ -76,27 +72,6 @@ class POItemOut(BaseModel):
     quantity_outstanding: QtyOut
 
 
-class ShipmentItemOut(BaseModel):
-    po_item_id: int
-    line_no: int
-    item_name: str
-    unit: str
-    quantity_shipped: QtyOut
-
-
-class ShipmentOut(BaseModel):
-    id: int
-    shipment_no: str
-    is_partial: bool
-    courier: str | None
-    tracking_number: str | None
-    expected_delivery_date: date | None
-    dispatched_at: datetime
-    status: str
-    overdue: bool
-    items: list[ShipmentItemOut]
-
-
 class HistoryOut(BaseModel):
     id: int
     entity_type: str
@@ -124,6 +99,7 @@ class PODetail(BaseModel):
     overdue: bool
     has_open_discrepancy: bool
     locked: bool  # vendor has acknowledged/shipped: only notes and required date are editable
+    can_ship: bool  # vendor may dispatch: acknowledged, open, and something left to ship
     items: list[POItemOut]
-    shipments: list[ShipmentOut]
+    shipments: list[ShipmentDetail]
     history: list[HistoryOut]

@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     seed_password: str = "Password123!"
     upload_dir: str = "uploads"
     max_upload_mb: int = 10
+    # Used to build links in (mock) emails
+    app_url: str = "http://localhost"
     min_password_length: int = 8
     # Business timezone: decides what "today" is for overdue checks
     app_timezone: str = "Asia/Kuala_Lumpur"

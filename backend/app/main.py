@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core.config import get_settings
-from app.routers import auth, pos, users, vendors
+from app.routers import attachments, auth, pos, shipments, users, vendors
 from app.services.errors import ServiceError
 
 app = FastAPI(title=get_settings().app_name)
@@ -28,7 +28,7 @@ def service_error(_: Request, exc: ServiceError):
 
 
 api = APIRouter(prefix="/api")
-for module in (auth, vendors, users, pos):
+for module in (auth, vendors, users, pos, shipments, attachments):
     api.include_router(module.router)
 
 

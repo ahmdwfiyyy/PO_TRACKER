@@ -45,6 +45,34 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
 export const sendJson = <T>(path: string, body: unknown, method = "POST") =>
   api<T>(path, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 
+export const MAX_UPLOAD_MB = 10;
+export const UPLOAD_ACCEPT = ".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png";
+
+/** Attach a file (PDF/JPG/PNG) to a PO, shipment, receipt or discrepancy. */
+export function uploadFile<T>(entityType: string, entityId: number, file: File) {
+  if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
+    return Promise.reject(new ApiError(`${file.name} is larger than ${MAX_UPLOAD_MB} MB`, 400));
+  }
+  const form = new FormData();
+  form.set("entity_type", entityType);
+  form.set("entity_id", String(entityId));
+  form.set("file", file);
+  return api<T>("/api/attachments", { method: "POST", body: form });
+}
+
+/** Upload several files one after another; returns the error messages of any that failed. */
+export async function uploadFiles(entityType: string, entityId: number, files: File[]) {
+  const errors: string[] = [];
+  for (const file of files) {
+    try {
+      await uploadFile(entityType, entityId, file);
+    } catch (err) {
+      errors.push(`${file.name}: ${errorText(err)}`);
+    }
+  }
+  return errors;
+}
+
 /** Download a file from a protected endpoint (a plain link would not send the login token). */
 export async function download(path: string, fallbackName: string) {
   const res = await fetch(path, { headers: authHeaders() });

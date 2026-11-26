@@ -63,25 +63,81 @@ export type POItem = {
   quantity_outstanding: number;
 };
 
+export type EntityType = "po" | "shipment" | "receipt" | "discrepancy";
+
+export type Attachment = {
+  id: number;
+  entity_type: EntityType;
+  entity_id: number;
+  filename: string;
+  mime_type: string;
+  size: number;
+  uploaded_by_name: string | null;
+  uploaded_at: string;
+};
+
 export type ShipmentItem = {
   po_item_id: number;
   line_no: number;
   item_name: string;
+  item_code: string | null;
+  vendor_confirmed_name: string | null;
   unit: string;
   quantity_shipped: number;
+};
+
+export type ReceiptItem = {
+  po_item_id: number;
+  item_name_entered: string;
+  quantity_received: number;
+  quantity_accepted: number;
+};
+
+export type Receipt = {
+  id: number;
+  received_by_name: string | null;
+  received_at: string;
+  notes: string | null;
+  items: ReceiptItem[];
+  attachments: Attachment[];
+};
+
+export type DiscrepancyType = "SHORT" | "EXCESS" | "WRONG_ITEM" | "DAMAGED" | "OTHER";
+
+export type Discrepancy = {
+  id: number;
+  shipment_id: number;
+  po_item_id: number | null;
+  item_name: string | null;
+  type: DiscrepancyType;
+  description: string | null;
+  status: "OPEN" | "RESOLVED";
+  reported_by_name: string | null;
+  created_at: string;
+  resolution_note: string | null;
+  resolved_by_name: string | null;
+  resolved_at: string | null;
+  attachments: Attachment[];
 };
 
 export type Shipment = {
   id: number;
   shipment_no: string;
+  po_id: number;
+  po_number: string;
+  vendor: VendorRef;
   is_partial: boolean;
   courier: string | null;
   tracking_number: string | null;
   expected_delivery_date: string | null;
   dispatched_at: string;
+  created_by_name: string | null;
   status: ShipmentStatus;
   overdue: boolean;
   items: ShipmentItem[];
+  receipt: Receipt | null;
+  discrepancies: Discrepancy[];
+  attachments: Attachment[];
 };
 
 export type HistoryEntry = {
@@ -111,6 +167,7 @@ export type PODetail = {
   overdue: boolean;
   has_open_discrepancy: boolean;
   locked: boolean;
+  can_ship: boolean;
   items: POItem[];
   shipments: Shipment[];
   history: HistoryEntry[];

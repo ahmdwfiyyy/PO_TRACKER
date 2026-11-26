@@ -17,6 +17,9 @@ docker compose up --build -d      # db, backend (runs migrations on start), fron
 docker compose exec backend python seed.py
 ```
 
+`seed.py --reset` deletes **all** data and re-creates the demo, with POs in every stage
+(on the way, overdue, partially delivered, open discrepancy, delivered, new).
+
 - App: http://localhost
 - API docs: http://localhost:8000/docs
 
@@ -55,8 +58,10 @@ backend/
     core/       config, security (hashing, JWT, login lockout), deps (current user, role checks)
     models/     SQLAlchemy tables and status enums
     schemas/    Pydantic request/response models
-    routers/    auth, vendors, users, pos  (all under /api)
-    services/   status (derived PO status rules), access (who sees which PO), po (create_po, edit, cancel, search)
+    routers/    auth, vendors, users, pos, shipments, attachments  (all under /api)
+    services/   status (derived PO status rules), access (who sees which PO), po (create_po, edit, cancel, search),
+                shipments (acknowledge, dispatch, receive, discrepancies), notify + email (mocked),
+                storage + attachments (uploads)
   alembic/      migrations
   tests/
   seed.py

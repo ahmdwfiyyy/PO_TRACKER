@@ -15,9 +15,9 @@ import {
   PlusIcon,
   Select,
   Spinner,
+  button,
   inputCls,
   redBtn,
-  secondaryBtn,
   smallBtn,
   tableHead,
   td,
@@ -31,7 +31,7 @@ const ROLE_TONE: Record<Role, Tone> = { purchasing: "red", receiving: "blue", ve
 function FormButtons({ busy, label, onClose }: { busy: boolean; label: string; onClose: () => void }) {
   return (
     <div className="flex justify-end gap-3 pt-2">
-      <button type="button" className={`${secondaryBtn} h-12`} onClick={onClose}>
+      <button type="button" className={button("secondary", "lg")} onClick={onClose}>
         Cancel
       </button>
       <button type="submit" disabled={busy} className={redBtn}>

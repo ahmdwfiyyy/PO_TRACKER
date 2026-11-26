@@ -5,7 +5,7 @@ import { ROLE_LABELS } from "../api/format";
 import type { Role } from "../api/types";
 import { useUser, useAuth } from "../context/AuthContext";
 import ChangePasswordModal from "./ChangePasswordModal";
-import { Brand, BuildingIcon, ClipboardIcon, KeyIcon } from "./ui";
+import { Brand, BuildingIcon, ClipboardIcon, KeyIcon, TruckIcon } from "./ui";
 
 // Menu per role. Later phases add Dashboard, Incoming shipments and Discrepancies here.
 const NAV: Record<Role, [string, string, ReactNode][]> = {
@@ -14,7 +14,10 @@ const NAV: Record<Role, [string, string, ReactNode][]> = {
     ["/admin", "Vendors & users", <BuildingIcon key="v" />],
   ],
   vendor: [["/pos", "My purchase orders", <ClipboardIcon key="p" />]],
-  receiving: [["/pos", "Purchase orders", <ClipboardIcon key="p" />]],
+  receiving: [
+    ["/incoming", "Incoming shipments", <TruckIcon key="i" />],
+    ["/pos", "Purchase orders", <ClipboardIcon key="p" />],
+  ],
 };
 
 function Header({ onChangePassword }: { onChangePassword: () => void }) {

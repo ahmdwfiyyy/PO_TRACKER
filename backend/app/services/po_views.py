@@ -4,18 +4,12 @@ from datetime import date
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.models import PurchaseOrder, Shipment, ShipmentItem, StatusHistory
-from app.schemas.pos import (
-    HistoryOut,
-    PODetail,
-    POItemOut,
-    POListItem,
-    ShipmentItemOut,
-    ShipmentOut,
-    VendorRef,
-)
+from app.models import PurchaseOrder, Shipment, StatusHistory
+from app.schemas.common import VendorRef
+from app.schemas.pos import HistoryOut, PODetail, POItemOut, POListItem
 from app.services.po import is_locked, open_discrepancy_expr, overdue_expr
-from app.services.status import ZERO, ItemTotals, is_shipment_overdue, item_totals
+from app.services.shipment_views import build_shipments, load_shipments
+from app.services.status import CLOSED_PO_STATUSES, ZERO, ItemTotals, item_totals, outstanding_qty
 
 
 def to_list_item(po: PurchaseOrder, overdue: bool, has_disc: bool) -> POListItem:
@@ -44,8 +38,10 @@ def build_po_detail(db: Session, po: PurchaseOrder, today: date) -> PODetail:
     totals = item_totals(db, po.id)
 
     items = []
+    can_ship = False
     for item in po.items:
         t = totals.get(item.id, ItemTotals())
+        can_ship = can_ship or outstanding_qty(item, t) > 0
         items.append(
             POItemOut(
                 id=item.id,
@@ -64,36 +60,8 @@ def build_po_detail(db: Session, po: PurchaseOrder, today: date) -> PODetail:
             )
         )
 
-    shipments = db.scalars(
-        select(Shipment)
-        .where(Shipment.po_id == po.id)
-        .options(selectinload(Shipment.items).selectinload(ShipmentItem.po_item))
-        .order_by(Shipment.id)
-    ).all()
-    shipment_out = [
-        ShipmentOut(
-            id=s.id,
-            shipment_no=s.shipment_no,
-            is_partial=s.is_partial,
-            courier=s.courier,
-            tracking_number=s.tracking_number,
-            expected_delivery_date=s.expected_delivery_date,
-            dispatched_at=s.dispatched_at,
-            status=s.status,
-            overdue=is_shipment_overdue(s.status, s.expected_delivery_date, today),
-            items=[
-                ShipmentItemOut(
-                    po_item_id=si.po_item_id,
-                    line_no=si.po_item.line_no,
-                    item_name=si.po_item.item_name,
-                    unit=si.po_item.unit,
-                    quantity_shipped=si.quantity_shipped,
-                )
-                for si in sorted(s.items, key=lambda x: x.po_item.line_no)
-            ],
-        )
-        for s in shipments
-    ]
+    shipments = load_shipments(db, Shipment.po_id == po.id)
+    shipment_out = build_shipments(db, shipments, today)
 
     # Timeline: the PO's own status changes plus those of its shipments
     shipment_ids = [s.id for s in shipments]
@@ -125,6 +93,7 @@ def build_po_detail(db: Session, po: PurchaseOrder, today: date) -> PODetail:
         overdue=bool(overdue),
         has_open_discrepancy=bool(has_disc),
         locked=is_locked(po),
+        can_ship=can_ship and po.acknowledged_at is not None and po.status not in CLOSED_PO_STATUSES,
         items=items,
         shipments=shipment_out,
         history=[

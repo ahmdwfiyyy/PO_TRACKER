@@ -3,13 +3,15 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Query
 
 from app.core.config import today
-from app.core.deps import DB, CurrentUser, PurchasingUser
+from app.core.deps import DB, CurrentUser, PurchasingUser, VendorUser
 from app.models import POStatus
 from app.schemas.common import Page
 from app.schemas.pos import POCancel, POCreate, PODetail, POListItem, POUpdate
+from app.schemas.shipments import AcknowledgeRequest, ShipmentCreate
 from app.services.access import get_visible_po
 from app.services.po import cancel_po, create_po, list_pos, update_po
 from app.services.po_views import build_po_detail, to_list_item
+from app.services.shipments import acknowledge_po, create_shipment
 
 router = APIRouter(prefix="/pos", tags=["purchase orders"])
 
@@ -73,6 +75,24 @@ def put_po(po_id: int, body: POUpdate, db: DB, user: PurchasingUser):
         k: getattr(body, k) for k in body.model_fields_set if getattr(body, k) is not None or k in nullable
     }
     update_po(db, po, changes, user)
+    db.commit()
+    return build_po_detail(db, po, today())
+
+
+@router.post("/{po_id}/acknowledge", response_model=PODetail)
+def post_acknowledge(po_id: int, body: AcknowledgeRequest, db: DB, user: VendorUser):
+    """Vendor confirms item names and quantities; the PO becomes PREPARING."""
+    po = get_visible_po(db, po_id, user)
+    acknowledge_po(db, po, user, body)
+    db.commit()
+    return build_po_detail(db, po, today())
+
+
+@router.post("/{po_id}/shipments", response_model=PODetail, status_code=201)
+def post_shipment(po_id: int, body: ShipmentCreate, db: DB, user: VendorUser):
+    """Vendor dispatches some or all of the outstanding quantity."""
+    po = get_visible_po(db, po_id, user)
+    create_shipment(db, po, user, body, today())
     db.commit()
     return build_po_detail(db, po, today())
 

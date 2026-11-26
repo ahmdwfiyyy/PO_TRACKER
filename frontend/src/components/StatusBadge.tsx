@@ -1,4 +1,4 @@
-import type { POStatus, ShipmentStatus } from "../api/types";
+import type { DiscrepancyType, POStatus, ShipmentStatus } from "../api/types";
 import { AlertIcon, Badge, ClockIcon } from "./ui";
 import type { Tone } from "./ui";
 
@@ -18,6 +18,19 @@ const SHIPMENT_STATUS: Record<ShipmentStatus, [string, Tone]> = {
   DISCREPANCY: ["Discrepancy", "red"],
   RESOLVED: ["Resolved", "slate"],
 };
+
+export const DISCREPANCY_TYPES: Record<DiscrepancyType, string> = {
+  SHORT: "Short (less than shipped)",
+  EXCESS: "Excess (more than shipped)",
+  WRONG_ITEM: "Wrong item",
+  DAMAGED: "Damaged",
+  OTHER: "Other",
+};
+
+export function DiscrepancyBadge({ type, status }: { type: DiscrepancyType; status: "OPEN" | "RESOLVED" }) {
+  const label = DISCREPANCY_TYPES[type].split(" (")[0];
+  return <Badge tone={status === "OPEN" ? "red" : "slate"}>{status === "OPEN" ? label : `${label} · resolved`}</Badge>;
+}
 
 export const PO_STATUS_OPTIONS = Object.entries(PO_STATUS).map(([value, [label]]) => ({ value: value as POStatus, label }));
 

@@ -4,21 +4,30 @@ import { Link, useLocation, useParams } from "react-router-dom";
 import { api, errorText, sendJson } from "../api/client";
 import { fmtDate, fmtDateTime, qty } from "../api/format";
 import type { PODetail, POItem } from "../api/types";
-import { Flags, POStatusBadge, ShipmentStatusBadge, statusLabel } from "../components/StatusBadge";
+import type { Shipment } from "../api/types";
+import { UploadButton } from "../components/Attachments";
+import { AcknowledgeModal, DispatchModal, ReportProblemModal } from "../components/PoActions";
+import ShipmentCard from "../components/ShipmentCard";
+import { Flags, POStatusBadge, statusLabel } from "../components/StatusBadge";
 import {
+  AlertIcon,
   BackIcon,
   Badge,
   Banner,
   Card,
+  CheckIcon,
   EditIcon,
   EmptyState,
   Field,
+  InboxIcon,
   Loading,
   Modal,
   Spinner,
   TruckIcon,
+  button,
   redBtn,
   secondaryBtn,
+  smallBtn,
   tableHead,
   td,
   textareaCls,
@@ -74,7 +83,7 @@ function CancelModal({ po, onClose, onDone }: { po: PODetail; onClose: () => voi
           <textarea maxLength={2000} value={reason} onChange={(e) => setReason(e.target.value)} className={textareaCls} />
         </Field>
         <div className="flex justify-end gap-3 pt-2">
-          <button type="button" className={`${secondaryBtn} h-12`} onClick={onClose}>
+          <button type="button" className={button("secondary", "lg")} onClick={onClose}>
             Keep PO
           </button>
           <button type="submit" disabled={busy} className={redBtn}>
@@ -97,7 +106,7 @@ export default function PoDetailPage() {
     const text = (location.state as { notice?: string } | null)?.notice;
     return text ? { type: "success", text } : null;
   });
-  const [cancelling, setCancelling] = useState(false);
+  const [dialog, setDialog] = useState<"cancel" | "acknowledge" | "dispatch" | { report: Shipment } | null>(null);
 
   const load = useCallback(() => {
     api<PODetail>(`/api/pos/${id}`)
@@ -123,7 +132,40 @@ export default function PoDetailPage() {
   if (!po) return <Loading />;
 
   const isPurchasing = user.role === "purchasing";
+  const isVendor = user.role === "vendor";
+  const isReceiving = user.role === "receiving";
   const closed = po.status === "DELIVERED" || po.status === "CANCELLED";
+  const canAcknowledge = isVendor && !po.acknowledged_at && po.status === "ISSUED";
+
+  const done = (text: string, uploadErrors: string[] = []) => {
+    setDialog(null);
+    setNotice(
+      uploadErrors.length
+        ? { type: "error", text: `${text} But some files were not uploaded: ${uploadErrors.join(" ")}` }
+        : { type: "success", text },
+    );
+    load();
+  };
+
+  const shipmentActions = (s: Shipment) => (
+    <>
+      {isReceiving && s.status === "ON_THE_WAY" && (
+        <Link to={`/shipments/${s.id}/receive`} className={button("red", "sm")}>
+          <InboxIcon className="h-3.5 w-3.5" />
+          Receive
+        </Link>
+      )}
+      {(isVendor || isPurchasing) && s.status === "ON_THE_WAY" && (
+        <UploadButton entityType="shipment" entityId={s.id} label="Add DO / invoice" onUploaded={load} />
+      )}
+      {(isReceiving || isPurchasing) && s.status !== "ON_THE_WAY" && (
+        <button type="button" className={smallBtn} onClick={() => setDialog({ report: s })}>
+          <AlertIcon className="h-3.5 w-3.5" />
+          Report problem
+        </button>
+      )}
+    </>
+  );
   const showConfirmed = po.items.some((i) => i.vendor_confirmed_name !== null || i.vendor_confirmed_qty !== null);
 
   return (
@@ -149,15 +191,32 @@ export default function PoDetailPage() {
                   <EditIcon className="h-4 w-4" />
                   Edit
                 </Link>
-                <button type="button" className={`${secondaryBtn} text-brand-red`} onClick={() => setCancelling(true)}>
+                <button type="button" className={button("danger", "md")} onClick={() => setDialog("cancel")}>
                   Cancel PO
                 </button>
               </>
+            )}
+            {canAcknowledge && (
+              <button type="button" className={button("red", "md")} onClick={() => setDialog("acknowledge")}>
+                <CheckIcon />
+                Acknowledge PO
+              </button>
+            )}
+            {isVendor && po.can_ship && (
+              <button type="button" className={button("red", "md")} onClick={() => setDialog("dispatch")}>
+                <TruckIcon className="h-4 w-4" />
+                Dispatch goods
+              </button>
             )}
           </>
         }
       >
         <Banner notice={notice} />
+        {canAcknowledge && (
+          <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Please check the items and quantities below, then click <strong>Acknowledge PO</strong> to let Carsem know you are preparing it.
+          </div>
+        )}
         <dl className="grid grid-cols-2 gap-5 md:grid-cols-4">
           <Info label="Issue date">{fmtDate(po.issue_date)}</Info>
           <Info label="Required by">
@@ -235,34 +294,11 @@ export default function PoDetailPage() {
           {po.shipments.length === 0 ? (
             <EmptyState title="No shipments yet" text="Shipments appear here when the vendor dispatches goods." />
           ) : (
-            <ul className="space-y-3">
+            <div className="space-y-4">
               {po.shipments.map((s) => (
-                <li key={s.id} className="rounded-xl border border-blue-100 p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="flex items-center gap-2 font-bold text-brand-navy">
-                      <TruckIcon className="h-5 w-5 text-brand-blue" />
-                      {s.shipment_no}
-                      {s.is_partial && <Badge tone="violet">Partial</Badge>}
-                    </p>
-                    <span className="flex gap-1.5">
-                      <ShipmentStatusBadge status={s.status} />
-                      <Flags overdue={s.overdue} />
-                    </span>
-                  </div>
-                  <p className="mt-2 text-sm text-slate-600">
-                    {s.courier ?? "Courier not given"}
-                    {s.tracking_number && ` · ${s.tracking_number}`} · expected {fmtDate(s.expected_delivery_date)}
-                  </p>
-                  <ul className="mt-2 text-sm text-slate-700">
-                    {s.items.map((i) => (
-                      <li key={i.po_item_id}>
-                        {i.item_name}: <strong>{qty(i.quantity_shipped)}</strong> {i.unit}
-                      </li>
-                    ))}
-                  </ul>
-                </li>
+                <ShipmentCard key={s.id} shipment={s} actions={shipmentActions(s)} />
               ))}
-            </ul>
+            </div>
           )}
         </Card>
 
@@ -286,15 +322,22 @@ export default function PoDetailPage() {
         </Card>
       </div>
 
-      {cancelling && (
-        <CancelModal
+      {dialog === "cancel" && <CancelModal po={po} onClose={() => setDialog(null)} onDone={() => done("PO cancelled.")} />}
+      {dialog === "acknowledge" && (
+        <AcknowledgeModal po={po} onClose={() => setDialog(null)} onDone={() => done("PO acknowledged. Carsem Purchasing has been notified.")} />
+      )}
+      {dialog === "dispatch" && (
+        <DispatchModal
           po={po}
-          onClose={() => setCancelling(false)}
-          onDone={(updated) => {
-            setPo(updated);
-            setCancelling(false);
-            setNotice({ type: "success", text: "PO cancelled." });
-          }}
+          onClose={() => setDialog(null)}
+          onDone={(_, errors) => done("Shipment dispatched. Carsem has been notified.", errors)}
+        />
+      )}
+      {dialog && typeof dialog === "object" && (
+        <ReportProblemModal
+          shipment={dialog.report}
+          onClose={() => setDialog(null)}
+          onDone={(errors) => done("Problem reported. Purchasing and the vendor have been notified.", errors)}
         />
       )}
     </div>

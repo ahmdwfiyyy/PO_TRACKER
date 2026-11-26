@@ -73,10 +73,12 @@ def test_po_without_items_is_not_delivered():
         (ShipmentStatus.ON_THE_WAY, ShipmentStatus.DELIVERED, True),
         (ShipmentStatus.ON_THE_WAY, ShipmentStatus.DISCREPANCY, True),
         (ShipmentStatus.DISCREPANCY, ShipmentStatus.RESOLVED, True),
+        (ShipmentStatus.DELIVERED, ShipmentStatus.DISCREPANCY, True),
+        (ShipmentStatus.RESOLVED, ShipmentStatus.DISCREPANCY, True),
         (ShipmentStatus.DELIVERED, ShipmentStatus.ON_THE_WAY, False),
         (ShipmentStatus.DISCREPANCY, ShipmentStatus.DELIVERED, False),
-        (ShipmentStatus.RESOLVED, ShipmentStatus.DISCREPANCY, False),
         (ShipmentStatus.ON_THE_WAY, ShipmentStatus.RESOLVED, False),
+        (ShipmentStatus.RESOLVED, ShipmentStatus.ON_THE_WAY, False),
     ],
 )
 def test_shipment_transitions(old, new, ok):
